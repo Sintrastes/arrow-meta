@@ -118,7 +118,7 @@ private fun List<ValueParameterDescriptor>.renderParameters(): String =
     val context = it.contextualAnnotations().firstOrNull()
     if (it.isProof() && context != null)
       "@$context ${it.name}: ${it.type} = TODO(\"Compile time replaced\")"
-    else "${it.name}: ${it.type}"
+    else "${it.fqNameSafe}: ${it.type}"
   } + ", unit: Unit = Unit"
 
 private fun List<ValueParameterDescriptor>.renderAsArguments(): String = joinToString {
