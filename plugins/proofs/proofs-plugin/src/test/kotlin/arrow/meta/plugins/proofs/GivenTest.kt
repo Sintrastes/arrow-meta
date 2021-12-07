@@ -1,5 +1,6 @@
 package arrow.meta.plugins.proofs
 
+import arrow.meta.plugin.testing.Code
 import arrow.meta.plugin.testing.CompilerTest
 import arrow.meta.plugin.testing.assertThis
 import arrow.meta.plugins.newMetaDependencies
@@ -28,6 +29,26 @@ class GivenTest {
         val result: String = given()
       """,
       expected = "result" to "yes!"
+    )
+  }
+
+  @Test
+  fun `use of imported interface`() {
+    givenTest(
+      source =
+      """
+        @Given 
+        internal val intSemigroup: mod.Semigroup<Int> = object: mod.Semigroup<Int> {
+            override operator fun Int.plus(other: Int): Int = this + other
+        }
+        
+        fun <S> usingSemigroup(x: S, @Given semigroup: mod.Semigroup<S>): S = with(semigroup) {
+            x + x
+        }
+        
+        val result: Int = usingSemigroup<Int>(21)
+      """,
+      expected = "result" to 42
     )
   }
 
@@ -117,6 +138,7 @@ class GivenTest {
     """
     package test
     import arrow.Context
+    import mod.Semigroup
     
     @Context
     @Retention(AnnotationRetention.RUNTIME)
@@ -134,6 +156,15 @@ class GivenTest {
     //metadebug
   """.trimIndent()
 
+  val externalModule =
+    """
+      package mod
+         
+      interface Semigroup<A> {
+          operator fun A.plus(other: A): A
+      }
+    """.trimIndent()
+
   private fun givenTest(source: String, expected: Pair<String, Any?>) {
     val codeSnippet = """
        $prelude
@@ -142,8 +173,26 @@ class GivenTest {
     assertThis(
       CompilerTest(
         config = { newMetaDependencies() },
-        code = { codeSnippet.source },
-        assert = { allOf(expected.first.source.evalsTo(expected.second)) }
+        code = {
+          sources(
+              Code.Source(
+                filename = "Mod.kt",
+                text = externalModule
+              ),
+              Code.Source(
+                filename = "Test.kt",
+                text = codeSnippet
+              )
+          )
+        },
+        assert = {
+          allOf(
+            Code.Source(
+              filename = "TestKt",
+              text = expected.first
+            ).evalsTo(expected.second)
+          )
+        }
       )
     )
   }
