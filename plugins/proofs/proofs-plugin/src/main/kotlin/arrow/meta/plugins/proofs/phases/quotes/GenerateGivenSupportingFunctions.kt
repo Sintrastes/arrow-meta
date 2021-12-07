@@ -8,6 +8,7 @@ import arrow.meta.plugins.proofs.phases.contextualAnnotations
 import arrow.meta.plugins.proofs.phases.isProof
 import arrow.meta.plugins.proofs.phases.resolve.cache.skipPackages
 import org.jetbrains.kotlin.analyzer.AnalysisResult
+import org.jetbrains.kotlin.asJava.classes.tryResolveMarkerInterfaceFQName
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
@@ -16,6 +17,7 @@ import org.jetbrains.kotlin.descriptors.ReceiverParameterDescriptor
 import org.jetbrains.kotlin.descriptors.TypeParameterDescriptor
 import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
 import org.jetbrains.kotlin.descriptors.containingPackage
+import org.jetbrains.kotlin.js.descriptorUtils.getJetTypeFqName
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.platform.CommonPlatforms
@@ -117,8 +119,8 @@ private fun List<ValueParameterDescriptor>.renderParameters(): String =
   joinToString {
     val context = it.contextualAnnotations().firstOrNull()
     if (it.isProof() && context != null)
-      "@$context ${it.name}: ${it.type} = TODO(\"Compile time replaced\")"
-    else "${it.fqNameSafe}: ${it.type}"
+      "@$context ${it.name}: ${it.type.getJetTypeFqName(false)} = TODO(\"Compile time replaced\")"
+    else "${it.name}: ${it.type}"
   } + ", unit: Unit = Unit"
 
 private fun List<ValueParameterDescriptor>.renderAsArguments(): String = joinToString {
